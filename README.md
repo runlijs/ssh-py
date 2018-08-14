@@ -4,7 +4,7 @@
 > 安装依赖
 
 ```bash
-pip3 install paramiko json argparse
+pip3 install paramiko argparse
 ```
 
 > 添加配置
