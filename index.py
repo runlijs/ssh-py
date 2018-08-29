@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-add', help='添加配置',action="store_true")
 parser.add_argument('-look', help='编辑配置列表',action="store_true")
 parser.add_argument('-upload', help='上传服务器',action="store_true")
-# parser.add_argument('-edit', type=bool, help='编辑配置', default=False)
+parser.add_argument('-sheer', help='是否强制更新',action="store_true")
 args = parser.parse_args()
 
 
@@ -64,6 +64,7 @@ def add_config():
 		ignore_folder 	= input(">>>")
 		print(strip_text(ignore_folder))
 
+
 		config = {
 			'project' 			: project.strip(),
 			'local_path' 		: local_path.strip(),
@@ -81,6 +82,9 @@ def add_config():
 		writeJsonToFile(configs)
 	except KeyboardInterrupt as key:
 		print('取消添加配置')
+
+
+
 
 # 查看配置文件
 def read_config_data():
@@ -123,6 +127,10 @@ def suer_upload():
 	try:
 		bl = input('是否确认更新:%s:%s服务器？(yes/no)：'%(ssh_config['project'],ssh_config['hostname']))
 		if bl.lower()=='yes' or bl.lower()=='y':
+			if args.sheer:
+				ssh_config['is_sheer_upload'] = 'yes'
+			else:
+				ssh_config['is_sheer_upload'] = 'no'
 			ssh.get_file_folder_list(ssh_config)
 		else:
 			print('重新选择服务器上传：')

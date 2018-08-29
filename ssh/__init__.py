@@ -8,7 +8,15 @@ import re
 def checkFile(loacl_path,ssh_path,filename,**args):
 	# print(loacl_path)
 	# print(ssh_path)
-	ssh,sftp = args['ssh'],args['sftp']
+	ssh,sftp,config = args['ssh'],args['sftp'],args['config']
+	
+
+	# 强制更新，不判断文件大小
+	if config['is_sheer_upload']=='yes':
+		sftp.put(loacl_path,ssh_path)
+		print('%s\t\t文件更新成功'%(filename))
+		return 1
+
 	stdin,stdout,stderr = ssh.exec_command('find '+ssh_path)
 	result = stdout.read().decode('utf-8')
 	# print(result)
@@ -27,7 +35,7 @@ def checkFile(loacl_path,ssh_path,filename,**args):
 			return 0
 		else:
 			sftp.put(loacl_path,ssh_path)
-			print('%s\t文件更新成功'%(filename))
+			print('%s\t\t文件更新成功'%(filename))
 			return 1
 
 
@@ -62,7 +70,6 @@ def get_file_list(config,item):
 	for parent,dirnames,filenames in os.walk(os.path.join(local_path,item)):
 		'''os.walk(config['local_path'])方法返回的一个tuple数据类型'''
 		for dirname in dirnames:
-			print(dirname)
 			if dirname not in config['ignore_folder']:
 				dirname = os.path.join(parent,dirname)
 				dirname = dirname[int(dirname.find(item)):]
@@ -151,21 +158,23 @@ def get_file_folder_list(config):
 		print('上传local_path路径下的全部文件和文件夹')
 		config['project_name'] = os.listdir(config['local_path'])
 
-
+	if 'ignore_folder' not in config:
+		config['ignore_folder'] = []
 
 	local_path = config['local_path']
 	for item in config['project_name']:
 		item = item.strip()
 
 		# print(local_path)
-		if os.path.isdir(os.path.join(local_path,item))!= False:
+		if os.path.isdir(os.path.join(local_path,item))!= False and item not in config['ignore_folder']:
 			# 获取 project_name 目录下文件和文件夹
 			folder_list.append(item)
 			folders,files = get_file_list(config,item)
 			file_list = file_list+files
 			folder_list = folder_list+folders
-		else:
+		elif item not in config['ignore_folder']:
 			file_list.append(item)
+
 
 	print('共有%s个文件待更新'%(len(file_list)))
 	print('共有%s个文件夹待更新'%(len(folder_list)))
