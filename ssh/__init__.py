@@ -59,27 +59,23 @@ def get_file_list(config,item):
 	file_list = []
 	# 判断字符串,去空格后是否为空
 	local_path = config['local_path']
-	if item.strip():
-		local_path = os.path.join(local_path,item)
-
-	if os.path.isdir(local_path) != False:
-		for parent,dirnames,filenames in os.walk(local_path):
-			'''os.walk(config['local_path'])方法返回的一个tuple数据类型'''
-			for dirname in dirnames:
+	for parent,dirnames,filenames in os.walk(os.path.join(local_path,item)):
+		'''os.walk(config['local_path'])方法返回的一个tuple数据类型'''
+		for dirname in dirnames:
+			print(dirname)
+			if dirname not in config['ignore_folder']:
 				dirname = os.path.join(parent,dirname)
 				dirname = dirname[int(dirname.find(item)):]
 				# p.find(config['project_name'])找到对应的字符串的索引 
 				# 然后在字符串的切割
 				folder_list.append(dirname)
 
-			for filename in filenames:
-				#  过滤绝对忽略的文件，
-				if filename not in config['ignore']:
-					filename = os.path.join(parent,filename)
-					filename = filename[int(filename.find(item)):]
-					file_list.append(filename)
-	else:
-		file_list.append(item)
+		for filename in filenames:
+			#  过滤绝对忽略的文件，
+			if filename not in config['ignore']:
+				filename = os.path.join(parent,filename)
+				filename = filename[int(filename.find(item)):]
+				file_list.append(filename)
 		
 	# 返回文件list和文件夹list
 	return (folder_list,file_list)
@@ -144,8 +140,10 @@ def get_file_folder_list(config):
 
 	print('start upload!!')
 	begin = datetime.datetime.now()
-	upload_file_num,upload_folder_num = 0,0
-	ssh,sftp = create_ssh(config)
+	# 记录上传的文件和文件夹数
+	upload_file_num,upload_folder_num = 0,0 
+	# 需要上传的文件和文件夹list
+	folder_list,file_list = [],[]
 
 	# print(config['project_name'])
 	if 'project_name' not in config or len(config['project_name'])==0:
@@ -153,16 +151,28 @@ def get_file_folder_list(config):
 		print('上传local_path路径下的全部文件和文件夹')
 		config['project_name'] = os.listdir(config['local_path'])
 
-	# print(config['project_name'])
-	# return
+
+
+	local_path = config['local_path']
 	for item in config['project_name']:
-		# 获取 project_name 目录下文件和文件夹
-		folder_list,file_list = get_file_list(config,item)
- 		# 检查文件夹，是否存在与创建
-		upload_folder_num = upload_folder_num+check_ssh_path(config=config,ssh=ssh,folder=item)
-		# 检查文件夹，是否存在与创建
-		upload_folder_num = upload_folder_num+upload_folder(folder_list,config=config,ssh=ssh)
-		upload_file_num = upload_file_num+upload_file(file_list,config=config,ssh=ssh,sftp=sftp)
+		item = item.strip()
+
+		# print(local_path)
+		if os.path.isdir(os.path.join(local_path,item))!= False:
+			# 获取 project_name 目录下文件和文件夹
+			folder_list.append(item)
+			folders,files = get_file_list(config,item)
+			file_list = file_list+files
+			folder_list = folder_list+folders
+		else:
+			file_list.append(item)
+
+	print('共有%s个文件待更新'%(len(file_list)))
+	print('共有%s个文件夹待更新'%(len(folder_list)))
+	ssh,sftp = create_ssh(config)
+	# 检查文件夹，是否存在与创建
+	upload_folder_num = upload_folder_num+upload_folder(folder_list,config=config,ssh=ssh)
+	upload_file_num   = upload_file_num+upload_file(file_list,config=config,ssh=ssh,sftp=sftp)
 	sftp.close()
 	ssh.close()
 	end = datetime.datetime.now()

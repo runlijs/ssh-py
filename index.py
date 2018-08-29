@@ -58,6 +58,12 @@ def add_config():
 		ignore 	= input(">>>")
 		print(strip_text(ignore))
 
+
+		print('\n绝对过滤不上传的文件夹')
+		print('如有多个请用@符合隔开')
+		ignore_folder 	= input(">>>")
+		print(strip_text(ignore_folder))
+
 		config = {
 			'project' 			: project.strip(),
 			'local_path' 		: local_path.strip(),
@@ -69,6 +75,7 @@ def add_config():
 			'password'			: password.strip(),
 			'port' 					: port,
 			'ignore'  			: strip_text(ignore),
+			'ignore_folder' : strip_text(ignore_folder)
 		}
 		configs.append(config)
 		writeJsonToFile(configs)
