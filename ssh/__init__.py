@@ -67,6 +67,7 @@ def get_file_list(config,item):
 	file_list = []
 	# 判断字符串,去空格后是否为空
 	local_path = config['local_path']
+	set2 = set(config['ignore_folder'])
 	for parent,dirnames,filenames in os.walk(os.path.join(local_path,item)):
 		'''os.walk(config['local_path'])方法返回的一个tuple数据类型'''
 		for dirname in dirnames:
@@ -78,8 +79,10 @@ def get_file_list(config,item):
 				folder_list.append(dirname)
 
 		for filename in filenames:
+			set1 = set(parent.split('/'))
+			# print()
 			#  过滤绝对忽略的文件，
-			if filename not in config['ignore']:
+			if filename not in config['ignore'] and len(set1.intersection(set2))==0:
 				filename = os.path.join(parent,filename)
 				filename = filename[int(filename.find(item)):]
 				file_list.append(filename)
@@ -176,6 +179,8 @@ def get_file_folder_list(config):
 			file_list.append(item)
 
 
+	# print(folder_list)
+	# print(file_list)
 	print('共有%s个文件待更新'%(len(file_list)))
 	print('共有%s个文件夹待更新'%(len(folder_list)))
 	ssh,sftp = create_ssh(config)
@@ -183,6 +188,10 @@ def get_file_folder_list(config):
 	upload_folder_num = upload_folder_num+upload_folder(folder_list,config=config,ssh=ssh)
 	upload_file_num   = upload_file_num+upload_file(file_list,config=config,ssh=ssh,sftp=sftp)
 	sftp.close()
+	command = config.get('command',None)
+	if command!=None:
+		stdin, stdout, stderr = ssh.exec_command(command)
+		# print(stdout)
 	ssh.close()
 	end = datetime.datetime.now()
 	print('本次更新：%s个文件夹，%s个文件，耗时:%s'%(upload_folder_num,upload_file_num,end-begin))
